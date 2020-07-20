@@ -13,7 +13,7 @@ async function testDID() {
     console.log(jubDID.getSubject());
 
     //registry
-    let registry = new JubRegistry("http://did.jubiterwallet.com/registry");
+    let registry = new JubRegistry("http://did.jubiterwallet.com/registry",key);
     let rv = await registry.registry(jubDID);
     //change owner
     let newKey = createHDKeyPair(MNEMONIC, '44\'/118\'/0\'/0/1');
