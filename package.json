@@ -24,6 +24,7 @@
   "dependencies": {
     "@jswebfans/cosmos-lib": "^1.2.4",
     "@types/elliptic": "^6.4.12",
-    "elliptic": "^6.5.3"
+    "elliptic": "^6.5.3",
+    "node-fetch": "^2.6.0"
   }
 }

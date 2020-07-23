@@ -1,5 +1,5 @@
 import * as elliptic from "elliptic";
-import {CosmosClient} from "./cosmosTx"
+import {CosmosClient} from "./CosmosTx"
 const cosmos = require('@jswebfans/cosmos-lib');
 const EC = elliptic.ec;
 const secp256k1 = new EC('secp256k1')
@@ -9,7 +9,9 @@ const JUB_OK = 0;
 
 type KeyPair = {
     sk:string,
-    pk:string
+    pk:string,
+    address:string,
+    pk_bech32:string
 };
 
 
@@ -17,7 +19,9 @@ function createHDKeyPair(Mnemoic:string,Path:string):KeyPair{
     const keys = cosmos.crypto.getKeysFromMnemonic(Mnemoic,Path);
     let key:KeyPair = {
         sk:Buffer.from(keys.privateKey).toString('hex'),
-        pk:Buffer.from(keys.publicKey).toString('hex')
+        pk:Buffer.from(keys.publicKey).toString('hex'),
+        address:cosmos.address.getAddress(Buffer.from(keys.publicKey,"hex")),
+        pk_bech32:cosmos.publicKey.getPublicKey(Buffer.from(keys.publicKey,"hex"))
     }
     
    return key;
@@ -29,12 +33,8 @@ class JubDID {
         this.keyPair = Key;
     }
 
-    getBech32Address():string{
-       return cosmos.address.getAddress(Buffer.from(this.keyPair.pk,"hex")); 
-    }
-
     getSubject() :string{
-        return `did:jub:${this.getBech32Address()}`;
+        return `did:jub:${this.keyPair.address}`;
     }
 }
 
