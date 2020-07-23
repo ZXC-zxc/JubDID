@@ -1,5 +1,6 @@
 import * as elliptic from "elliptic";
 import {CosmosClient} from "./CosmosTx"
+import { fetchGetData, fetchPostData } from "./fetchUtil";
 const cosmos = require('@jswebfans/cosmos-lib');
 const EC = elliptic.ec;
 const secp256k1 = new EC('secp256k1')
@@ -36,19 +37,52 @@ class JubDID {
     getSubject() :string{
         return `did:jub:${this.keyPair.address}`;
     }
+
+    getRegistryStr() :string{
+        let subject = this.getSubject();
+        let json:any = {
+            "authentication": [
+                {
+                    "type": "Secp256k1",
+                    "publicKey": [
+                        subject + "#key-1"
+                    ]
+                }
+            ],
+            "publicKey": [
+                {
+                    "id": subject + "#key-1",
+                    "type": "Secp256k1",
+                    "publicKeyHex": this.keyPair.pk
+                }
+            ]
+        };
+
+        return JSON.stringify(json);
+    }
 }
 
 class JubRegistry{
-    url:string;
-    cosmosClient :CosmosClient;
-    constructor(url:string,key:KeyPair){
-        this.url = url;
-        this.cosmosClient = new CosmosClient(key,"");
+    url : string;
+    cosmosUrl : string;
+    constructor(url:string,cosmosUrl:string){
+        this.url = url ;
+        this.cosmosUrl = cosmosUrl;
     }
 
     //create jubdid through Registry
-    async registry(did:JubDID):Promise<Number>{
-        return JUB_OK;
+    async registry(did:JubDID):Promise<string>{
+        //setp 1 : sign a registry cosmos tx
+        let cosmosClient = new CosmosClient(this.cosmosUrl);
+        let signedTx = await cosmosClient.signRegisterTx(did);
+        //setp 2 : use signedTx as data and post to registry
+        let data = {"options":{"operateType":"register","txMsg":"","identifier": ""}};
+        data["options"]["txMsg"] = signedTx;
+        data["options"]["identifier"] = did.getSubject();
+
+        let url = this.url + "/uni-registrar-web/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
+        let response = await fetchPostData(url,data);
+        return response;
     }
 
     //update jubdid through Registry
@@ -69,7 +103,8 @@ class JubResolver{
     }
 
     async resolve(didSubject:string):Promise<string>{
-        return  "";
+        let url = this.url + "/uni-resolver-web/1.0/identifiers/" + didSubject;
+        return fetchGetData(url);
     }
 }
 

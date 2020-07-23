@@ -1,5 +1,6 @@
-import {KeyPair} from "./index"
+import {KeyPair , JubDID} from "./index"
 const cosmos = require('@jswebfans/cosmos-lib');
+import { fetchGetData } from  "./fetchUtil";
 
 function sortObject(obj:any):any {
 	if (obj === null) return null;
@@ -13,32 +14,63 @@ function sortObject(obj:any):any {
 	return result;
 }
 
+type AccountInfo = {
+    accountNumber:string;
+    sequence:string;
+};
+
 class CosmosClient {
-    keyPair:KeyPair;
+
     url:string;
-    constructor(Key:KeyPair,url:string){
-        this.keyPair = Key;
+    constructor(url:string){
         this.url = url;
     }
 
-    async buildRigistryTx(accountNumber:string,sequence:string ):Promise<any>{
-        //need rigistry json
-        const jsonStr = '{"chain_id":"Jubiter","fee":{"amount":[],"gas":"200000"},"memo":"","msgs":[{"type":"/credential/AddCredential","value":{"hash":"c46532aa8d83a453ab0cfc4c247c3f75c1d7a9724bf3db034c9ddca5cf732cc6","name":"c46532aa8d83a453ab0cfc4c247c3f75c1d7a9724bf3db034c9ddca5cf732cc6","owner":"ftsafe1d3wjggvjhf79q72m92qyaddh0fhjhjvpyzcwgy","path":"url is null","time":"1594706001510"}}]}';
+    async getAccountInfo(account:string) : Promise<AccountInfo>{
+        let url = this.url + "/auth/accounts/" + account;
+        let response = await fetchGetData(url);
+
+        let info :AccountInfo = {
+            accountNumber: response["result"]["value"]["account_number"].toString(),
+            sequence: response["result"]["value"]["sequence"].toString()
+        };
+
+        return info;
+    }
+
+    async signRegisterTx(jubDID : JubDID) : Promise<any>{
+        //step 1 : Get accountNumber,sequence from Cosmos Server
+        let info = await this.getAccountInfo(jubDID.keyPair.address);
+        console.log(`accountNumber : ${info.accountNumber}`);
+        console.log(`sequence: ${info.sequence}`);
+
+        //step 2 : Build unsigned registry tx
+        let didRegistryStr = jubDID.getRegistryStr();
+        let b64RegistryStr = Buffer.from(didRegistryStr).toString('base64');
+        let unsignedTx = this.buildRigistryTx(info.accountNumber,info.sequence,b64RegistryStr,jubDID.keyPair.address);
+        let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
+        return signedTx;  
+    }
+
+    buildRigistryTx(accountNumber:string,sequence:string,didRegistry:string,actor:string):any{
+        const jsonStr = '{"chain_id":"Jubiter-did","fee":{"amount":[],"gas":"200000"},"memo":"","msgs":[{"type":"did/AddAttribute","value":{"type":"jubiterDID","value":"","actor":""}}]}';
         const json = JSON.parse(jsonStr);
         json["account_number"] = accountNumber;
         json["sequence"] = sequence;
+        json["msgs"][0]["value"]["value"] = didRegistry;
+        json["msgs"][0]["value"]["actor"] = actor;
         return json;
     }
 
-    async signTx(unsingedTx:any):Promise<string>{
-        let signature = cosmos.crypto.signJson(sortObject(unsingedTx), Buffer.from(this.keyPair.sk,'hex'));
-        let verify = cosmos.crypto.verifyJson(sortObject(unsingedTx), signature, Buffer.from(this.keyPair.pk,"hex"));
+    async signTx(keyPair:KeyPair,unsingedTx:any):Promise<string>{
+        let signature = cosmos.crypto.signJson(sortObject(unsingedTx), Buffer.from(keyPair.sk,'hex'));
+        let verify = cosmos.crypto.verifyJson(sortObject(unsingedTx), signature, Buffer.from(keyPair.pk,"hex"));
     
         if (!verify) {
             throw 'Cant verify signature';
         }
     
-        let b64PubKey = Buffer.from(this.keyPair.pk).toString('base64');
+        let b64PubKey = Buffer.from(keyPair.pk,'hex').toString('base64');
         let b64Signature = Buffer.from(signature).toString('base64');
     
         unsingedTx["signatures"] = [{

@@ -1,7 +1,6 @@
 debugger;
 
 import { JubDID, KeyPair, JubRegistry, JubResolver, createHDKeyPair } from '../src/index';
-import { CosmosClient } from '../src/CosmosTx';
 import { FtsafeProxy } from '../src/FtsafeProxy';
 
 
@@ -18,27 +17,26 @@ async function testDID() {
     const FTURL = "http://192.168.17.45:8480";
     let ftsafeProxy  = new FtsafeProxy(FTURL);
     let response = await ftsafeProxy.createAccount(key.address,key.pk_bech32);
+
+    //setp 3 : Use DID registry to regist a DID
+    const REGURL = "http://192.168.17.45:8480";
+    const COSMOSURL = "http://192.168.17.96:1317";
+    let jubDID = new JubDID(key);
+    let registry = new JubRegistry(REGURL,COSMOSURL);
+    response = await registry.registry(jubDID);
     console.log(response);
 
-    //setp 3 : Use 
+    //step 4 : resolve DID
+    const RESOLVEURL = "http://192.168.17.45:8480";
+    let resolver = new JubResolver(RESOLVEURL);
+    let didDocument = await resolver.resolve(jubDID.getSubject());
+    console.log(JSON.stringify(didDocument));
 
 
-    let jubDID = new JubDID(key);
-
-    //registry
-    let registry = new JubRegistry("http://did.jubiterwallet.com/registry",key);
-    let rv = await registry.registry(jubDID);
-    //change owner
-    let newKey = createHDKeyPair(MNEMONIC, '44\'/118\'/0\'/0/1');
-    rv = await registry.changeOwner(jubDID, newKey);
-
-    //sign Jwt
-
-    //verify Jwt
-    let resolver = new JubResolver("http://did.jubiterwallet.com/resolver");
-
-    //deactive
-    rv = await registry.deactive(jubDID);
+    //step 5 : update DID
+    //step 6 : sign JWT
+    //step 7 : verify JWT
+    //step 8 : deactive DID
 };
 
 testDID();
