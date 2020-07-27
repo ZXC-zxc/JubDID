@@ -64,24 +64,13 @@ class CosmosClient {
         return signedTx;  
     }
 
-    async signChangeOwnerTx(jubDID : JubDID,newOwner:string) : Promise<any>{
-        //step 1 : Get accountNumber,sequence from Cosmos Server
-        let info = await this.getAccountInfo(jubDID.keyPair.address);
-        console.log(`accountNumber : ${info.accountNumber}`);
-        console.log(`sequence: ${info.sequence}`);
-        //step 2 : Build unsigned changeOwner tx
-        let unsignedTx = this.buildChangeOwnerTx(info.accountNumber,info.sequence,newOwner,jubDID.keyPair.address);
-        let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
-        return signedTx;  
-    }
-
-    async signDeactiveTx(jubDID : JubDID) : Promise<any>{
+    async signDeactivateTx(jubDID : JubDID) : Promise<any>{
         //step 1 : Get accountNumber,sequence from Cosmos Server
         let info = await this.getAccountInfo(jubDID.keyPair.address);
         console.log(`accountNumber : ${info.accountNumber}`);
         console.log(`sequence: ${info.sequence}`);
         //step 2 : Build unsigned deactive tx
-        let unsignedTx = this.buildDeactiveTx(info.accountNumber,info.sequence,jubDID.keyPair.address);
+        let unsignedTx = this.buildDeactivateTx(info.accountNumber,info.sequence,jubDID.keyPair.address);
         let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
         return signedTx;  
     }
@@ -100,13 +89,7 @@ class CosmosClient {
         return this.buildMsg(accountNumber,sequence,[msgUpdate]);
     }
 
-    buildChangeOwnerTx(accountNumber:string,sequence:string,newOwner:string,actor:string):any{
-        const msgChangeOwner = {"type":"did/ChangeOwner","value":{"new_owner":"","actor":""}};
-        msgChangeOwner["value"]["actor"] = actor;
-        msgChangeOwner["value"]["new_owner"] = newOwner;
-        return this.buildMsg(accountNumber,sequence,[msgChangeOwner]);
-    }
-    buildDeactiveTx(accountNumber:string,sequence:string,actor:string):any{
+    buildDeactivateTx(accountNumber:string,sequence:string,actor:string):any{
         const msgDeactive = {"type":"did/DeleteAttribute","value":{"type":"jubiterDID","actor":""}};
         msgDeactive["value"]["actor"] = actor;
         return this.buildMsg(accountNumber,sequence,[msgDeactive]);

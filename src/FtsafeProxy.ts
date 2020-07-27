@@ -7,7 +7,7 @@ class FtsafeProxy {
     }
 
     async createAccount(address:string,pubKey:string) : Promise<any>{
-        let url = this.url + "/uni-registrar-web/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
+        let url = this.url + "/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
         let data = {
             "options":{
                 "operateType":"create",

@@ -99,7 +99,7 @@ class JubRegistry{
         let signedTx = await cosmosClient.signRegisterTx(did);
         //setp 2 : use signedTx as data and post to registry
         let data = this.buildPostData("register",signedTx, did)
-        let url = this.url + "/uni-registrar-web/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
+        let url = this.url + "/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
         let response = await fetchPostData(url,data);
         return response;
     }
@@ -110,36 +110,24 @@ class JubRegistry{
         let signedTx = await cosmosClient.signUpdateTx(did,updateKeyPair);
         //setp 2 : use signedTx as data and post to registry
         let data = this.buildPostData("update",signedTx, did)
-        let url = this.url + "/uni-registrar-web/1.0/update?driverId=driver-universalregistrar%2Fdriver-did-jub";
+        let url = this.url + "/1.0/update?driverId=driver-universalregistrar%2Fdriver-did-jub";
         let response = await fetchPostData(url,data);
         return response;
     }
-    //changeOwner jubdid through Registry
-    async changeOwner(did: JubDID,newOwner:string): Promise<Number>{
+    //deactivate jubdid through Registry
+    async deactivate(did: JubDID): Promise<Number>{
         //setp 1 : sign a registry cosmos tx
         let cosmosClient = new CosmosClient(this.cosmosUrl);
-        let signedTx = await cosmosClient.signChangeOwnerTx(did,newOwner);
-        //setp 2 : use signedTx as data and post to changeOwner
-        let data = this.buildPostData("update",signedTx, did)
-        let url = this.url + "/uni-registrar-web/1.0/update?driverId=driver-universalregistrar%2Fdriver-did-jub";
-        let response = await fetchPostData(url,data);
-        return response;
-        return JUB_OK;
-    }
-    //deactive jubdid through Registry
-    async deactive(did: JubDID): Promise<Number>{
-        //setp 1 : sign a registry cosmos tx
-        let cosmosClient = new CosmosClient(this.cosmosUrl);
-        let signedTx = await cosmosClient.signDeactiveTx(did);
-        //setp 2 : use signedTx as data and post to deactive
-        let data = this.buildPostData("deactive",signedTx, did)
-        let url = this.url + "/uni-registrar-web/1.0/deactive?driverId=driver-universalregistrar%2Fdriver-did-jub";
+        let signedTx = await cosmosClient.signDeactivateTx(did);
+        //setp 2 : use signedTx as data and post to deactivate
+        let data = this.buildPostData("deactivate",signedTx, did)
+        let url = this.url + "/1.0/deactivate?driverId=driver-universalregistrar%2Fdriver-did-jub";
         let response = await fetchPostData(url,data);
         return response;
     }
     private buildPostData(operateType:string,signedTx: any, did: JubDID): any{
-        let data = { "options": { "operateType": "deactive", "txMsg": "", "identifier": "" } };
-        if (operateType === "register" || operateType === "update" || operateType === "deactive" ) {
+        let data = { "options": { "operateType": "", "txMsg": "", "identifier": "" } };
+        if (operateType === "register" || operateType === "update" || operateType === "deactivate" ) {
             data["options"]["operateType"] = operateType;
         } else {
             data["options"]["operateType"] = "";
@@ -157,7 +145,7 @@ class JubResolver{
     }
 
     async resolve(didSubject:string):Promise<string>{
-        let url = this.url + "/uni-resolver-web/1.0/identifiers/" + didSubject;
+        let url = this.url + "/1.0/identifiers/" + didSubject;
         return fetchGetData(url);
     }
 }
