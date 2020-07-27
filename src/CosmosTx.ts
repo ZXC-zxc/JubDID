@@ -51,18 +51,76 @@ class CosmosClient {
         let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
         return signedTx;  
     }
-
-    buildRigistryTx(accountNumber:string,sequence:string,didRegistry:string,actor:string):any{
-        const jsonStr = '{"chain_id":"Jubiter-did","fee":{"amount":[],"gas":"200000"},"memo":"","msgs":[{"type":"did/AddAttribute","value":{"type":"jubiterDID","value":"","actor":""}}]}';
-        const json = JSON.parse(jsonStr);
-        json["account_number"] = accountNumber;
-        json["sequence"] = sequence;
-        json["msgs"][0]["value"]["value"] = didRegistry;
-        json["msgs"][0]["value"]["actor"] = actor;
-        return json;
+    async signUpdateTx(jubDID : JubDID,updateKeyPair:KeyPair) : Promise<any>{
+        //step 1 : Get accountNumber,sequence from Cosmos Server
+        let info = await this.getAccountInfo(jubDID.keyPair.address);
+        console.log(`accountNumber : ${info.accountNumber}`);
+        console.log(`sequence: ${info.sequence}`);
+        //step 2 : Build unsigned update tx
+        let didUpdateStr = jubDID.getUpdateStr(updateKeyPair);
+        let b64UpdateStr = Buffer.from(didUpdateStr).toString('base64');
+        let unsignedTx = this.buildUpdateTx(info.accountNumber,info.sequence,b64UpdateStr,jubDID.keyPair.address);
+        let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
+        return signedTx;  
     }
 
-    async signTx(keyPair:KeyPair,unsingedTx:any):Promise<string>{
+    async signChangeOwnerTx(jubDID : JubDID,newOwner:string) : Promise<any>{
+        //step 1 : Get accountNumber,sequence from Cosmos Server
+        let info = await this.getAccountInfo(jubDID.keyPair.address);
+        console.log(`accountNumber : ${info.accountNumber}`);
+        console.log(`sequence: ${info.sequence}`);
+        //step 2 : Build unsigned changeOwner tx
+        let unsignedTx = this.buildChangeOwnerTx(info.accountNumber,info.sequence,newOwner,jubDID.keyPair.address);
+        let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
+        return signedTx;  
+    }
+
+    async signDeactiveTx(jubDID : JubDID) : Promise<any>{
+        //step 1 : Get accountNumber,sequence from Cosmos Server
+        let info = await this.getAccountInfo(jubDID.keyPair.address);
+        console.log(`accountNumber : ${info.accountNumber}`);
+        console.log(`sequence: ${info.sequence}`);
+        //step 2 : Build unsigned deactive tx
+        let unsignedTx = this.buildDeactiveTx(info.accountNumber,info.sequence,jubDID.keyPair.address);
+        let signedTx = await this.signTx(jubDID.keyPair,unsignedTx);
+        return signedTx;  
+    }
+
+    buildRigistryTx(accountNumber:string,sequence:string,didRegistry:string,actor:string):any{
+        const msgRigistry = {"type":"did/AddAttribute","value":{"type":"jubiterDID","value":"","actor":""}};
+        msgRigistry["value"]["value"] = didRegistry;
+        msgRigistry["value"]["actor"] = actor;
+        return this.buildMsg(accountNumber,sequence,[msgRigistry]);;
+    }
+
+    buildUpdateTx(accountNumber:string,sequence:string,didUpdate:string,actor:string):any{
+        const msgUpdate = {"type":"did/UpdateAttribute","value":{"type":"jubiterDID","value":"","actor":""}};
+        msgUpdate["value"]["value"] = didUpdate;
+        msgUpdate["value"]["actor"] = actor;
+        return this.buildMsg(accountNumber,sequence,[msgUpdate]);
+    }
+
+    buildChangeOwnerTx(accountNumber:string,sequence:string,newOwner:string,actor:string):any{
+        const msgChangeOwner = {"type":"did/ChangeOwner","value":{"new_owner":"","actor":""}};
+        msgChangeOwner["value"]["actor"] = actor;
+        msgChangeOwner["value"]["new_owner"] = newOwner;
+        return this.buildMsg(accountNumber,sequence,[msgChangeOwner]);
+    }
+    buildDeactiveTx(accountNumber:string,sequence:string,actor:string):any{
+        const msgDeactive = {"type":"did/DeleteAttribute","value":{"type":"jubiterDID","actor":""}};
+        msgDeactive["value"]["actor"] = actor;
+        return this.buildMsg(accountNumber,sequence,[msgDeactive]);
+    }
+    private buildMsg(accountNumber: string, sequence: string, msgs: any): any{
+        const baseTxStr:string = '{"chain_id":"Jubiter-did","fee":{"amount":[],"gas":"200000"},"memo":"","msgs":[]}';
+        const json = JSON.parse(baseTxStr);
+        json["account_number"] = accountNumber;
+        json["sequence"] = sequence;
+        json["msgs"] = msgs;
+        return json;
+    }
+    async signTx(keyPair: KeyPair, unsingedTx: any): Promise<string>{
+        
         let signature = cosmos.crypto.signJson(sortObject(unsingedTx), Buffer.from(keyPair.sk,'hex'));
         let verify = cosmos.crypto.verifyJson(sortObject(unsingedTx), signature, Buffer.from(keyPair.pk,"hex"));
     

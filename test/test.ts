@@ -32,11 +32,16 @@ async function testDID() {
     let didDocument = await resolver.resolve(jubDID.getSubject());
     console.log(JSON.stringify(didDocument));
 
-
     //step 5 : update DID
+    let updateKeyPair:KeyPair = createHDKeyPair(MNEMONIC, '44\'/118\'/0\'/0/1');
+    response = await registry.update(jubDID, updateKeyPair);
+    console.log(response);
+
     //step 6 : sign JWT
     //step 7 : verify JWT
     //step 8 : deactive DID
+    response = await registry.deactive(jubDID);
+    console.log(response);
 };
 
 testDID();
