@@ -33,7 +33,10 @@ async function fetchGetData(url = '', params: any = {}) {
     const response = await fetch(url, {
         method: 'GET',
     });
-
-    return response.json();
+    if (response.status == 200) {
+        return response.json();
+    } else {
+        return "";
+    }
 }
 export { fetchPostData ,fetchGetData };
