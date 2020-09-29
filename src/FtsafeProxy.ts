@@ -1,4 +1,4 @@
-import { fetchPostData } from  "./fetchUtil";
+import { fetchPostData ,fetchGetData} from  "./fetchUtil";
 
 class FtsafeProxy {
     url:string;
@@ -16,6 +16,11 @@ class FtsafeProxy {
             }
         };
         return fetchPostData(url,data);
+    } 
+
+    async getSchema(key:string) : Promise<any>{
+        let url = this.url + "/did/schema/"+key;
+        return fetchGetData(url,{});
     } 
 
 }
