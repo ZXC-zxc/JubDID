@@ -92,12 +92,12 @@ class CosmosClient {
             chain_id: "Jubiter-did",
             fee: {
                 amount: [],
-                gase: "200000",
+                gas: "200000",
             },
             memo: "",
             account_number: account.accountNumber,
             sequence: account.sequence,
-            msgs: opMsg,
+            msgs: [opMsg],
         }
 
         return msg;
