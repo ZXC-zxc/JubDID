@@ -39,7 +39,7 @@ export class JubDID {
         const json: any = {
             "authentication": [
                 {
-                    "type": "Secp256k1",
+                    "type": "Secp256k1SignatureAuthentication2018",
                     "publicKey": [
                         subject + "#key-1"
                     ]
@@ -48,7 +48,7 @@ export class JubDID {
             "publicKey": [
                 {
                     "id": subject + "#key-1",
-                    "type": "Secp256k1",
+                    "type": "Secp256k1VerificationKey2018",
                     "publicKeyHex": this.keyPair.pk
                 }
             ]
