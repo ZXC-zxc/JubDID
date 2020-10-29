@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-async function fetchPostData(url = '', data = {}) {
+async function fetchPostData(url = '', data:any = {}) {
     // Default options are marked with *
     const response = await fetch(url, {
         method: 'POST', // *GET, POST, PUT, DELETE, etc.
@@ -15,7 +15,11 @@ async function fetchPostData(url = '', data = {}) {
         referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
         body: JSON.stringify(data) // body data type must match "Content-Type" header
     });
-    return response.json(); // parses JSON response into native JavaScript objects
+    if (response.status == 200) {
+        return response.json();
+    } else {
+        return "";
+    }
 }
 
 async function fetchGetData(url = '', params: any = {}) {
