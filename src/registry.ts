@@ -16,14 +16,7 @@ export class JubRegistry {
     // create jubdid through Registry
     async registry(did: JubDID): Promise<string> {
         // setp 1 : sign a registry cosmos tx
-        // const tx = await this.client.addAttrTx(did, "jubiterDID", did.getRegistryStr());
-        // // setp 2 : use signedTx as data and post to registry
-        // const data = this.buildPostData("register", tx, did)
-        // const url = this.url + "/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
-        // const response = await fetchPostData(url, data);
-        // return response;
-        // setp 1 : sign a registry cosmos tx
-        let signedTx = await this.client.signRegisterTx(did);
+        const signedTx = await this.client.addAttrTx(did, "jubiterDID",Buffer.from(did.getRegistryStr()).toString('base64'));
         //setp 2 : use signedTx as data and post to registry
         let data = this.buildPostData("register",signedTx, did)
         let url = this.url + "/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
@@ -33,7 +26,7 @@ export class JubRegistry {
     // update jubdid through Registry
     async update(did: JubDID, updateKeyPair: KeyPair): Promise<Number> {
         // setp 1 : sign a registry cosmos tx
-        const tx = await this.client.updateAttrTx(did, "jubiterDID", did.getUpdateStr(did.keyPair));
+        const tx = await this.client.updateAttrTx(did, "jubiterDID", Buffer.from(did.getUpdateStr(did.keyPair)).toString('base64'));
         // setp 2 : use signedTx as data and post to registry
         const data = this.buildPostData("update", tx, did)
         const url = this.url + "/1.0/update?driverId=driver-universalregistrar%2Fdriver-did-jub";
@@ -50,33 +43,20 @@ export class JubRegistry {
         const response = await fetchPostData(url, data);
         return response;
     }
-
-    async signvc(did: JubDID): Promise<any> {
+    // sign vc by schema
+    async signvc(did: JubDID,schema?:any): Promise<any> {
         // get vc payload
-        //TODO  GET Schemo 
-        const vc = did.getVcPayload();
-        
+        const vc = did.getVcPayloadSchema(schema);
         // show msg on key
         // const student = vc.sub as string;
         // const vcType = (vc.vc.type as string[])[0];
         // const jbx = new JBX()
         // await jbx.open();
         // await jbx.authorize(Buffer.from(vcType).toString('hex'), student);
-        // const resp = await jbx.authorize("0202020202020202020202020202020202020202020202020202020202020202", "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
+        // const resp = await jbx.authorize
         // sign payload
         const signer = SimpleSigner(did.keyPair.sk);
-        // const vcJwt = await createVerifiableCredentialJwt(vc, { did: did.getSubject(), signer });
         const vcJwt = await createVerifiableCredentialJwt(vc, { signer: signer, alg: 'ES256K',did: did.getSubject() });
-        // on-chain
-        // const key = "jubiter#vc#" + vc.vc.type + vc.sub;
-        // const tx = await this.client.addAttrTx(did, key, vcJwt);
-
-        // setp 2 : use signedTx as data and post to register
-        // shoud't put credential on chain
-        // const data = this.buildPostData("register", tx, did)
-        // const url = this.url + "/1.0/register?driverId=driver-universalregistrar%2Fdriver-did-jub";
-        // const response = await fetchPostData(url, data);
-        // return response;
         return new Promise((resolve, reject) => {
             resolve(vcJwt);
         });
